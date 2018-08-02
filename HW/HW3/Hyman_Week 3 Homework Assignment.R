@@ -17,7 +17,7 @@ readStates <- function(url =
     #deleting the last 7 rows
     df <- df[-52:-58,]
     #Creating a vector of column names
-    colNames <- c("stateName", "Jul2010", "Jul2011", "base2010", "base2011")
+    colNames <- c("stateName", "base2010", "base2011", "Jul2010", "Jul2011")
     #Assigning the column names to the data frame
     colnames(df) <- colNames
     #resetting the row numbers
