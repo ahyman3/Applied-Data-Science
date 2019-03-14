@@ -1,0 +1,99 @@
+---
+title: "Applied Data Science Project"
+author: "Alex Hyman"
+date: "8/26/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Loading in the data
+
+Reading in the data frame and converting the customer ID into the string instead of a factor. Also loading in ggplot for future plots.
+
+```{r cars}
+df <- read.csv("data.csv")
+df$customerID <- as.character(df$customerID)
+library(ggplot2)
+```
+
+## Churn Rates
+
+Is there a difference in churn rates between all customers and the churn rates in senior citizens?
+
+```{r}
+#Churn rates among senior citizens
+seniors <- length(df$customerID[(df$SeniorCitizen == 1 & df$Churn == "Yes")]) / length(df$customerID[df$SeniorCitizen == 1]) * 100
+#Rounding the rate
+seniors = round(seniors, digits = 2)
+#Print out churn rate for senior citizens
+cat("Churn rate among senior citizens: ", seniors, "%", sep = "")
+
+#Churn rate for non-senior citizen customers
+allOtherCustomers <- length(df$customerID[df$Churn == "Yes" & df$SeniorCitizen == 0]) / length(df$customerID[df$SeniorCitizen == 0]) * 100
+allOtherCustomers <- round(allOtherCustomers, 2)
+cat("Churn rate of non-Seniors: ", allOtherCustomers, "%", sep = "")
+
+#Creating booleans for churn in t.test application
+df[df$Churn == "Yes", "LogicalChurn"] <- T
+df[df$Churn == "No", "LogicalChurn"] <- F
+#Are these groups statistically different
+t <- t.test(LogicalChurn ~ SeniorCitizen, data = df)
+print(t)
+```
+
+The churn rates for senior citizens are statistically greater than those that are not senior citizens.
+
+## Visualizing Churn by Average Cost and Tenure
+
+Can a pattern in churn be recognized based on how much is spent and what kind of contract? 
+
+```{r}
+#Plotting tenure vs charge to see if pattern in where churn is
+g <- ggplot(df, aes(tenure, MonthlyCharges, color = Churn, shape = Contract))
+g <- g + geom_point()
+g <- g + ggtitle("Tenure vs. Average Monthly Charges")
+g <- g + xlab("Tenure") + ylab("Average Monthly Charges")
+g
+
+p <- ggplot(df[df$Contract == "Month-to-month", ], aes(tenure, fill = Churn))
+p <- p + geom_histogram(binwidth = 1) + xlab("Tenure (months)")
+p <- p + ggtitle("Histogram on Churn and tenure\nfor Month-to-Month Customers")
+p
+```
+Appears to be separated in a diagonal manner.
+
+## Test for independence in contract
+
+Is there any relationship between the cnatract type and churn rate?
+
+```{r}
+#Chi-square test for independence
+chit <- chisq.test(df$Contract, df$Churn)
+#What was actually observed
+chit$observed
+#What was expected
+chit$expected
+```
+There is definitely some relationship between the contract type and churn rate. Two year contract is significantly below the expected rate.
+
+```{r}
+mean(df[df$Churn == "Yes", "tenure"] )
+median(df[df$Churn == "Yes", "tenure"] )
+```
+
+```{r}
+p <- ggplot(df, aes(Contract)) + geom_bar(aes(fill = Churn))
+p <- p + ylab("Count") + ggtitle("Churn by Contract type")
+p
+```
+
+
+
+
+```{r}
+tapply(df$customerID, df$PhoneService == "Yes" & df$Churn == "Yes", length)
+```
+
